@@ -1,183 +1,293 @@
-import React, { useState } from 'react';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { Form, Button, Container, Row, Col } from 'react-bootstrap';
+import React, { useState } from "react";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Link from "@mui/material/Link";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import axios from "axios";
+import Alert from '@mui/material/Alert';
 
-const Register = () => {
-  const [registerAs, setRegisterAs] = useState('Parent'); // Set initial state to 'Parent'
+import { MenuItem, InputLabel, FormControl, Select,  } from "@mui/material";
 
-  const handleSelectChange = (event) => {
-    setRegisterAs(event.target.value);
-    formik.setFieldValue('name', ''); // Clear the name field when changing the dropdown
+const BASE_URL = "http://localhost:8000/api/v1";
+
+const theme = createTheme();
+
+export default function Register({ handleHaveAccount }) {
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [firstNameError, setFirstNameError] = useState(false)
+  const [lastNameError, setLastNameError] = useState(false)
+  const [emailError, setEmailError] = useState(false)
+  const [addressError, setaddressError] = useState(false)
+  const [contactNumberError, setContactNumberError] = useState(false)
+  const [role, setRole] = useState();
+ 
+  const [passwordError, setPasswordError] = useState(false)
+
+
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
   };
 
-  const formik = useFormik({
-    initialValues: {
-      name: '',
-      contactNo: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
-    validationSchema: Yup.object({
-      name: Yup.string()
-        .min(2, 'Must be at least 2 characters')
-        .required('Required'),
-      contactNo: Yup.string()
-        .matches(/^\d{10}$/, 'Must be exactly 10 digits')
-        .required('Required'),
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Required'),
-      password: Yup.string()
-        .min(8, 'Must be at least 8 characters')
-        .required('Required'),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Passwords must match')
-        .required('Required'),
-    }),
-    onSubmit: (values) => {
-      alert(JSON.stringify(values, null, 2));
-    },
-  });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    let er = false;
+
+    const data = {
+      email: formData.get("email"),
+      contactNumber: formData.get("contactNumber"),
+      address: formData.get("address"),
+      password: formData.get("password"),
+      name: formData.get("firstName") +" "+ formData.get("lastName"),
+      role: role
+    }
+
+    const { email, contactNumber, password} = data
+
+    if(email==="" || !validateEmail(email)){
+      
+      er=true;
+      setEmailError(true)
+    }else{
+      setEmailError(false)
+    }
+    if(formData.get("firstName")===""){
+      er=true;
+     
+      setFirstNameError(true)
+    }else{
+      setFirstNameError(false)
+    }
+
+    if(formData.get("lastName")===""){
+      er=true;
+     
+      setLastNameError(true)
+    }else{
+      setLastNameError(false)
+    }
+
+    if(formData.get("address")===""){
+      er=true;
+     
+      setaddressError(true)
+    }else{
+      setaddressError(false)
+    }
+
+    if(contactNumber==="" || contactNumber.length!=10){
+      er=true;
+      
+      setContactNumberError(true)
+    }else{
+      setContactNumberError(false)
+    }
+
+
+    if(password===""){
+      er=true;
+      
+      setPasswordError(true)
+    }else{
+      setPasswordError(false)
+    }
+       try {
+      if(er) throw "Invalid form data"
+      console.log("error", error)
+      const response = await axios({
+        method: "post",
+        url: BASE_URL + "/users/signup",
+        data: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if(response.data){
+          setSuccess(true)
+          setTimeout(()=>  handleHaveAccount(true), 3000)
+      }
+
+      setTimeout(()=> setSuccess(false), 5000)
+      
+    } catch (err) {
+
+        setError(true)
+        setTimeout(()=> setError(false), 5000)
+    }
+  };
 
   return (
-    <Container className="mt-5">
-      <Row>
-        <Col md={6}>
-          <h2 style={{ padding: '30px', color: 'blue' }}>Register</h2>
-          <Form onSubmit={formik.handleSubmit}>
-            <Form.Group controlId="formBasicDropdown">
-              <Form.Label style={{ color: 'blue', textDecoration: 'underline' }}>Register As</Form.Label>
-              <Form.Control
-                style={{ color: 'blue', border: '2px solid blue' }}
-                as="select"
-                onChange={handleSelectChange}
-                value={registerAs}
-              >
-                <option value="Parent">Parent</option>
-                <option value="Daycare">Daycare</option>
-              </Form.Control>
-            </Form.Group>
-
-            {registerAs === 'Daycare' ? (
-              <Form.Group controlId="formBasicText">
-                <Form.Label>Daycare Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter Daycare Name"
-                  name="name"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  value={formik.values.name}
-                  isInvalid={formik.touched.name && formik.errors.name}
+    <ThemeProvider theme={theme}>
+      <Container style={{marginTop: 70}} component="main" maxWidth="xs">
+        <CssBaseline />
+        <Box
+          sx={{
+            marginTop: 8,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          {error && <Alert severity="error">Error occured, while registeration</Alert>}
+        {success && <Alert severity="success">Registration successful, kindly proceed with login</Alert>}
+          <Typography component="h1" variant="h5">
+            Register
+          </Typography>
+          <Box
+            component="form"
+            noValidate
+            onSubmit={handleSubmit}
+            sx={{ mt: 3 }}
+          >
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  error={firstNameError}
+                  helperText={firstNameError?"Enter first name":""}
+                  onChange={(e)=>setFirstNameError(false)}
+                  name="firstName"
+                  required
+                  fullWidth
+                  id="firstName"
+                  label="First Name"
+                  autoFocus
                 />
-                <Form.Control.Feedback type="invalid">
-                  {formik.errors.name}
-                </Form.Control.Feedback>
-              </Form.Group>
-            ) : (
-              <Form.Group controlId="formBasicText">
-                <Form.Label>Full Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter Full Name"
-                  name="name"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  value={formik.values.name}
-                  isInvalid={formik.touched.name && formik.errors.name}
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                   error={lastNameError}
+                   helperText={lastNameError?"Enter last name":""}
+                   onChange={(e)=>setLastNameError(false)}
+                  required
+                  fullWidth
+                  id="lastName"
+                  label="Last Name"
+                  name="lastName"
+                  autoComplete="family-name"
                 />
-                <Form.Control.Feedback type="invalid">
-                  {formik.errors.name}
-                </Form.Control.Feedback>
-              </Form.Group>
-            )}
-
-            <Form.Group controlId="formBasicText">
-              <Form.Label>Contact No.</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Contact Number"
-                name="contactNo"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.contactNo}
-                isInvalid={formik.touched.contactNo && formik.errors.contactNo}
-              />
-              <Form.Control.Feedback type="invalid">
-                {formik.errors.contactNo}
-              </Form.Control.Feedback>
-            </Form.Group>
-
-            <Form.Group controlId="formBasicEmail">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="Enter Email"
-                name="email"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.email}
-                isInvalid={formik.touched.email && formik.errors.email}
-              />
-              <Form.Control.Feedback type="invalid">
-                {formik.errors.email}
-              </Form.Control.Feedback>
-            </Form.Group>
-
-            <Form.Group controlId="formBasicPassword">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Password"
-                name="password"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.password}
-                isInvalid={formik.touched.password && formik.errors.password}
-              />
-              <Form.Control.Feedback type="invalid">
-                {formik.errors.password}
-              </Form.Control.Feedback>
-            </Form.Group>
-
-            <Form.Group controlId="formBasicConfirmPassword">
-              <Form.Label>Confirm Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Confirm Password"
-                name="confirmPassword"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.confirmPassword}
-                isInvalid={formik.touched.confirmPassword && formik.errors.confirmPassword}
-              />
-              <Form.Control.Feedback type="invalid">
-                {formik.errors.confirmPassword}
-              </Form.Control.Feedback>
-            </Form.Group>
-
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  error={emailError}
+                  helperText={emailError?"Enter valid email":""}
+                  onChange={(e)=> setEmailError(false)}
+                  required
+                  fullWidth
+                  id="email"
+                  label="Email Address"
+                  name="email"
+                  autoComplete="email"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                error={contactNumberError}
+                helperText={contactNumberError?"Enter valid contact number":""}
+                onChange={(e)=>setContactNumberError(false)}
+                  required
+                  fullWidth
+                  id="contactNumber"
+                  label="Contact Number"
+                  name="contactNumber"
+                  autoComplete="contactNumber"
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12} sm={12}>
+                <TextField
+                error={addressError}
+                helperText={addressError?"Enter valid address":""}
+                onChange={(e)=>setaddressError(false)}
+                  required
+                  fullWidth
+                  id="address"
+                  label="Address"
+                  name="address"
+                  autoComplete="address"
+                  type="text"
+                />
+              </Grid>
+              <Grid item xs={12} sm={12}>
+                <FormControl sx={{ minWidth: "100%" }}>
+                  <InputLabel id="demo-simple-select-helper-label">
+                    Select Role
+                  </InputLabel>
+                  <Select
+                    labelId="demo-simple-select-helper-label"
+                    id="demo-simple-select-helper"
+                    value={role}
+                    label="Select Role"
+                    onChange={(e) => { setRole(e.target.value)
+                    }}
+                  >
+                    <MenuItem value={"USER"}>User</MenuItem>
+                    <MenuItem value={"DAYCARE_OWNER"}>Daycare Owner</MenuItem>
+                    <MenuItem value={"ADMIN"}>Admin</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                error={passwordError}
+                helperText={passwordError?"Enter valid password":""}
+                onChange={(e)=>setPasswordError(false)}
+                  required
+                  fullWidth
+                  name="password"
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  autoComplete="new-password"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      onChange={() => setShowPassword(!showPassword)}
+                      value={showPassword}
+                      color="primary"
+                    />
+                  }
+                  label="Show Password"
+                />
+              </Grid>
+            </Grid>
             <Button
-              style={{ marginTop: '3rem' }}
-              className='position-relative bottom-0 start-50 translate-middle'
-              variant="primary"
               type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
             >
-              {registerAs === 'Daycare' ? 'Register ₹499' : 'Register'}
+              Register
             </Button>
-          </Form>
-        </Col>
-        <Col md={5}>
-          <img
-            style={{ marginTop: '7rem', height: '400px' }}
-            src={process.env.PUBLIC_URL + '/registration.jpg'}
-            alt="Registration"
-          />
-        </Col>
-      </Row>
-    </Container>
+            <Grid container justifyContent="flex-end">
+              <Grid item>
+                <Button onClick={() => handleHaveAccount(true)}>
+                  <Link href="#" variant="body2">
+                    Already have an account? Sign in
+                  </Link>
+                </Button>
+              </Grid>
+            </Grid>
+          </Box>
+        </Box>
+      </Container>
+    </ThemeProvider>
   );
 }
-
-export default Register;

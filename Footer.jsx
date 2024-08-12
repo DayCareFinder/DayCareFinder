@@ -1,21 +1,13 @@
-import React from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import React from 'react'
+
+import { Box, Typography } from '@mui/material'
 
 const Footer = () => {
   return (
-    <footer className="bg-light text-center text-lg-start footer">
-      <Container className="p-4">
-        <Row>
-          <Col>
-          
-          </Col>
-        </Row>
-      </Container>
-      <div className="text-center p-3 bg-dark text-white">
-        &copy; 2024 DayCare
-      </div>
-    </footer>
-  );
+    <Box display="flex" flexDirection="row" justifyContent="space-around" alignItems="center" sx={{background: "#000", width: "100%", height:60, mt:20}}>
+        <Typography variant='h8' sx={{color: "#fff"}}>© 2024 Day Care Finder. All Rights Reserved. | Email: helpdesk@daycarefinder.com</Typography>
+    </Box>
+  )
 }
 
-export default Footer;
+export default Footer
